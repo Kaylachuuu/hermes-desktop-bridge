@@ -1,4 +1,6 @@
 name: hermes-desktop-terminal
-version: 0.1.0
+version: 0.2.0
 description: Route terminal and shell file tools to the session-owning Hermes Desktop
 kind: backend
+provides_tools:
+  - desktop_terminal_session

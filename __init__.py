@@ -157,3 +157,10 @@ class HermesDesktopTerminalProvider(TerminalEnvironmentProvider):
 def register(ctx):
     _declare_contract()
     ctx.register_terminal_environment_provider(HermesDesktopTerminalProvider())
+    import importlib.util
+    from pathlib import Path
+    spec = importlib.util.spec_from_file_location('hermes_desktop_terminal_routing', Path(__file__).with_name('routing.py'))
+    routing = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(routing)
+    from types import SimpleNamespace
+    routing.install(ctx, SimpleNamespace(_session_key=_session_key, _owner=_owner))

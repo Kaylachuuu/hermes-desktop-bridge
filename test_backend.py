@@ -18,6 +18,7 @@ from tools.terminal_tool_backends import _create_environment
 
 spec = importlib.util.spec_from_file_location("athena_desktop", pathlib.Path(__file__).with_name("__init__.py"))
 plugin = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = plugin
 spec.loader.exec_module(plugin)
 
 
@@ -37,7 +38,8 @@ class BridgeIntegration(unittest.TestCase):
         self.frames = []
         self.reply_mode = "normal"
         server_requests.bind_sinks(self.dispatch, lambda *args: None, lambda sid: True)
-        plugin.register(types.SimpleNamespace(register_terminal_environment_provider=terminal_env_registry.register_provider))
+        plugin.register(types.SimpleNamespace(register_terminal_environment_provider=terminal_env_registry.register_provider,
+                                             register_middleware=lambda *args: None, register_tool=lambda **kwargs: None))
         self.env = _create_environment("hermes-desktop-terminal", None, "/workspace", 10)
 
     def dispatch(self, frame):
