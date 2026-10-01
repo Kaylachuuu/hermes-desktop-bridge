@@ -83,3 +83,41 @@ class OrdinaryToolRouting(BridgeIntegration):
         self.assertIn('error', refused)
         self.assertFalse(calls)
         self.assertIs(get_terminal_scope(), self.policy)
+
+    def auto_route(self):
+        ctx = types.SimpleNamespace(register_tool=lambda **kwargs: None,
+                                    register_middleware=lambda *args: None,
+                                    get_config=lambda key, default: True)
+        return routing.install(ctx, plugin)
+
+    def test_desktop_default_and_explicit_opt_out(self):
+        control, route = self.auto_route()
+        self.assertTrue(json.loads(control({'action': 'status'}))['enabled'])
+        seen = []
+        route('terminal', {}, lambda args: seen.append(get_terminal_scope()['TERMINAL_ENV']), task_id=self.task)
+        self.assertEqual(seen, ['hermes-desktop-terminal'])
+        control({'action': 'disable'})
+        seen.clear()
+        result = json.loads(route('terminal', {}, lambda args: seen.append(args)))
+        self.assertIn('error', result)
+        self.assertFalse(seen)
+        self.assertIs(get_terminal_scope(), self.policy)
+
+    def test_desktop_default_disconnect_never_falls_back(self):
+        _, route = self.auto_route()
+        self.peers = []
+        seen = []
+        result = json.loads(route('read_file', {}, lambda args: seen.append(args)))
+        self.assertIn('error', result)
+        self.assertFalse(seen)
+
+    def test_desktop_default_does_not_route_messaging(self):
+        from gateway.session_context import set_session_vars, clear_session_vars
+        _, route = self.auto_route()
+        tokens = set_session_vars(source='telegram', session_key='messaging-test')
+        try:
+            seen = []
+            route('terminal', {}, lambda args: seen.append(get_terminal_scope()))
+            self.assertEqual(seen, [self.policy])
+        finally:
+            clear_session_vars(tokens)

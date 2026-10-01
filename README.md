@@ -15,6 +15,12 @@ executes the command locally using Bash.
 
 ## Session controls (0.2.0)
 
+Set the plugin's `default_for_desktop` setting to `true` to automatically route Desktop
+conversations to their owning device. The setting defaults to false for new installations.
+Reload the plugin and start a new conversation after changing it. Desktop sessions with no
+valid owner refuse execution; messaging and CLI sessions keep their existing policy.
+The per-conversation disable control still works when the default is on.
+
 Enable this plugin, ensure the `terminal` and `file` toolsets are available, and start a new
 Desktop conversation. Call the plugin tool `desktop_terminal_session` with
 `{"action":"enable"}`. Use tool search if the tool is deferred. This is a tool call, not a shell command.

@@ -4,3 +4,8 @@ description: Route terminal and shell file tools to the session-owning Hermes De
 kind: backend
 provides_tools:
   - desktop_terminal_session
+config_schema:
+  default_for_desktop:
+    type: bool
+    default: false
+    description: Automatically route terminal and file tools for Desktop conversations to the session-owning device. Missing Desktop ownership refuses execution. Messaging and CLI sessions keep their existing policy. Reload the plugin and start a new conversation after changing this setting.

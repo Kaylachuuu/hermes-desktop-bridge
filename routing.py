@@ -8,6 +8,11 @@ ROUTED_TOOLS = frozenset({'terminal', 'read_file', 'write_file', 'patch', 'searc
 def install(ctx, provider):
     owners = {}
     lock = threading.RLock()
+    default_enabled = getattr(ctx, 'get_config', lambda key, default: default)('default_for_desktop', False) is True
+
+    def automatic_session():
+        from gateway.session_context import get_session_env
+        return default_enabled and get_session_env('HERMES_SESSION_SOURCE', '') == 'desktop'
 
     def enable(args, **kwargs):
         action = args.get('action')
@@ -22,7 +27,8 @@ def install(ctx, provider):
                     if action == 'disable':
                         owners[key] = False
                     state = owners.get(key)
-                return json.dumps({'enabled': bool(state), 'blocked': state is False,
+                return json.dumps({'enabled': bool(state) or (state is None and automatic_session()), 'blocked': state is False,
+                                   'default_for_desktop': default_enabled,
                                    'scope': 'this live conversation',
                                    'note': 'Disable blocks routed tools until re-enabled or a new conversation is started.'})
             sid = provider._owner(key)
@@ -39,7 +45,7 @@ def install(ctx, provider):
         key = provider._session_key()
         with lock:
             sid = owners.get(key)
-        if sid is None:
+        if sid is None and not automatic_session():
             return next_call(args)
         if sid is False:
             return json.dumps({'error': 'Desktop routing disabled for this conversation. Re-enable it or start a new conversation.', 'server_fallback': False})
@@ -47,7 +53,12 @@ def install(ctx, provider):
         token = None
         try:
             enforce_no_refusal()
-            if provider._owner(key) != sid:
+            actual_owner = provider._owner(key)
+            if sid is None:
+                with lock:
+                    owners[key] = actual_owner
+                sid = actual_owner
+            if actual_owner != sid:
                 raise RuntimeError('Desktop owner changed; re-enable routing for this conversation')
             policy = dict(get_terminal_scope() or {})
             policy.update(TERMINAL_ENV='hermes-desktop-terminal', TERMINAL_CWD='/workspace')
