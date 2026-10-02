@@ -1,4 +1,8 @@
-# Hermes Desktop Terminal
+# Hermes Desktop Bridge
+
+The repository was renamed from `hermes-desktop-terminal`. The internal plugin
+ID remains `hermes-desktop-terminal` for compatibility with existing installations.
+The experimental PC/browser/cross-device source is on [desktop-control-prototype](https://github.com/Kaylachuuu/hermes-desktop-bridge/tree/desktop-control-prototype).
 
 An experimental standalone Hermes Terminal Environment Provider that routes terminal and shell file
 operations to the session-owning Hermes Desktop over the existing server-request bridge.
@@ -61,7 +65,7 @@ trigger automatic retries or fallback execution on the server.
 Run these tests using the canonical Hermes launcher, from an installed development copy:
 
 ```bash
-hermes --run-module unittest discover -s /path/to/hermes-desktop-terminal -p 'test_*.py' -v
+hermes --run-module unittest discover -s /path/to/hermes-desktop-bridge -p 'test_*.py' -v
 ```
 
 The provider and routing fixtures pass integration tests against stock Hermes commit `1ce2cfb7f`,
