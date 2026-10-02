@@ -6,7 +6,7 @@ import sys
 import uuid
 
 
-def install(ctx, provider, route):
+def install(ctx, provider, route, control):
     def check(raw_args):
         if raw_args.strip():
             return 'Use /desktop-bridge-test without arguments.'
@@ -17,6 +17,9 @@ def install(ctx, provider, route):
         peer = server._session_live_transports(server._sessions[sid])[0]
         if current_transport() is not peer:
             return 'Refused: invoke this diagnostic from the conversation-owning Desktop.'
+        status = json.loads(control({'action': 'status'}))
+        if not status.get('enabled') or status.get('blocked'):
+            return 'Refused: enable Desktop routing before running this diagnostic; no server fallback.'
         from model_tools import handle_function_call
         task = key + '-bridge-diagnostic-' + uuid.uuid4().hex
         def call(name, args):
