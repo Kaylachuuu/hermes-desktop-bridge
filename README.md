@@ -1,7 +1,8 @@
 # Hermes Desktop Bridge
 
-The repository was renamed from `hermes-desktop-bridge`. The internal plugin
-ID remains `hermes-desktop-bridge` for compatibility with existing installations.
+The repository and internal plugin ID are now `hermes-desktop-bridge`.
+Existing installations using `hermes-desktop-terminal` must migrate their plugin
+folder and `plugins.enabled` / `plugins.entries` settings together.
 The experimental PC/browser/cross-device source is on [desktop-control-prototype](https://github.com/Kaylachuuu/hermes-desktop-bridge/tree/desktop-control-prototype).
 
 An experimental standalone Hermes Terminal Environment Provider that routes terminal and shell file
@@ -96,7 +97,7 @@ trigger automatic retries or fallback execution on the server.
 
 ### Cross-device terminal prototype
 
-The unpublished prototype adds `desktop_devices` and `desktop_remote_terminal`.
+This development branch adds `desktop_devices` and `desktop_remote_terminal`.
 Register the requesting Desktop with `action=register, role=origin`, then register
 the destination Desktop with `action=register, role=target`. The destination asks
 permission to accept commands signed by the listed origin devices. Both clients
@@ -114,7 +115,8 @@ conversation grants. Closing or reconnecting a client requires registration agai
 An unknown execution outcome must not be retried. There is no server fallback.
 This first prototype uses one origin or target role per device registration and
 routes terminal/file operations only. Browser and native PC tools remain tied to
-their current conversation's Desktop. Live cross-device acceptance is pending.
+their current conversation's Desktop. Live Windows-to-Linux terminal/file execution, origin-side approval, conversation
+grants, refused commands and revocation passed acceptance checks.
 
 - Requires the custom, opt-in Desktop capability; generic server-request support alone is insufficient
   for a production permission model.
@@ -143,3 +145,15 @@ live Windows acceptance or production readiness.
 The Desktop capability should be contributed upstream separately. Production adoption needs
 explicit capability negotiation, native consent and connection authorization, owner targeting,
 deduplication, bounded stdin/output, and cancellation of the full process tree.
+
+## October 2 morning checkpoint
+
+New Desktop chats receive plugin-owned guidance distinguishing ordinary terminal/file
+access on the conversation-owning device from cross-device tools. The former needs
+no destination ID; the latter requires target_device and command. List enrolled IDs
+with desktop_devices and {"action":"list"}. Existing chats retain their saved
+system prompts. All 51 regression checks passed against the stock backend.
+
+Scopuli live checks confirmed hostname/OS/cwd, reading local project source and
+creating directories. Quote paths containing spaces; the reported mkdir failure was
+resolved by shell quoting without a bridge code change.
