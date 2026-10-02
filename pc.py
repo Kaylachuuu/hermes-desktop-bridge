@@ -90,7 +90,7 @@ def install(ctx, bridge):
             return json.dumps({"isError": True, "error": str(exc), "retry": False,
                                "guidance": "No automatic retry or server fallback. Inspect fresh state before another action."})
 
-    ctx.register_tool("desktop_pc", "hermes-desktop-terminal", {
+    ctx.register_tool("desktop_pc", "hermes-desktop-bridge", {
         "name": "desktop_pc",
         "description": "Control the session-owning Desktop PC. First call describe with arguments.tool to learn each exact PC action schema. Discover exact pid/window_id with list_windows; capture get_window_state, then act using fresh element tokens and verify. Windows text entry should target the exact editor field token; delivery alone does not confirm effect. For browser operations use the dedicated desktop_browser_prepare/read/navigate/click/type/pointer/dialog tools with their flat parameters. Desktop asks native permission. status reports availability; revoke ends this conversation's access. Keep this conversation visible. Stop on errors; never guess arguments or retry an uncertain action. Edge and Firefox are available in the updated prototype; macOS and Linux remain pending live validation.",
         "parameters": {"type": "object", "properties": {
@@ -127,6 +127,6 @@ def install(ctx, bridge):
             description = "Prepare the owning Desktop browser in an explicitly chosen mode. Private: allow_launch=true, profile={mode:isolated_new}. Separate persistent signed-in Athena profile: allow_launch=true, profile={mode:athena_profile}. Existing Chrome/Edge window: allow_launch=false, profile={mode:existing_profile}, exact pid and window_id from desktop_list_windows. browser selects chrome, edge or firefox for new profiles. Account-enabled modes need separate native approval for each call or this conversation. Existing Firefox attachment is unavailable. Edge/Firefox private and Athena profiles return target_id/tab_id directly; existing windows and default Chrome require exact native window binding with desktop_browser_read. Stop on refusals; never switch modes or retry without user instruction."
         def browser_handler(args, _operation=operation, **kwargs):
             return handler({"action": _operation, "arguments": args}, **kwargs)
-        ctx.register_tool(tool_name, "hermes-desktop-terminal", {
+        ctx.register_tool(tool_name, "hermes-desktop-bridge", {
             "name": tool_name, "description": description, "parameters": parameters
         }, browser_handler, description="Browser control on the owning Desktop", emoji="🌐")
