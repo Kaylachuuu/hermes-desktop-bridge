@@ -62,6 +62,8 @@ def _decode(reply):
         raise ValueError("Desktop returned no structured execution result")
     code = value.get("returncode", value.get("exit_code", value.get("code")))
     if type(code) is not int:
+        if value.get("error"):
+            raise ValueError("Desktop returned an execution refusal: " + str(value["error"]))
         raise ValueError("Desktop returned no integer exit status")
     output = value.get("output")
     if output is None:
