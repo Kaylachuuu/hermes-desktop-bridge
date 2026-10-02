@@ -12,14 +12,14 @@ spec.loader.exec_module(diagnostic)
 
 
 class DirectDiagnostic(BridgeIntegration):
-    def run_command(self, peer):
+    def run_command(self, peer, default=True):
         commands = {}
         ctx = types.SimpleNamespace(register_tool=lambda **kw: None,
                                     register_middleware=lambda *args: None,
-                                    get_config=lambda key, default: True,
+                                    get_config=lambda key, fallback: default,
                                     register_command=lambda name, handler, **kw: commands.update({name: handler}))
-        _, route = routing.install(ctx, plugin)
-        diagnostic.install(ctx, plugin, route)
+        control, route = routing.install(ctx, plugin)
+        diagnostic.install(ctx, plugin, route, control)
         token = bind_transport(peer)
         try:
             return commands['desktop-bridge-test']('')
@@ -40,4 +40,9 @@ class DirectDiagnostic(BridgeIntegration):
     def test_other_transport_cannot_start_diagnostic(self):
         before = len(self.frames)
         self.assertIn('Refused', self.run_command(object()))
+        self.assertEqual(len(self.frames), before)
+
+    def test_disabled_default_never_uses_server_tools(self):
+        before = len(self.frames)
+        self.assertIn('no server fallback', self.run_command(self.peer, default=False))
         self.assertEqual(len(self.frames), before)
