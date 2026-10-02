@@ -1,4 +1,8 @@
 """Run from this directory with stock Hermes on PYTHONPATH (no live Desktop needed)."""
+import os
+# Keep collection in the managed test interpreter; never launch runtime repair.
+os.environ['HERMES_DISABLE_LAZY_INSTALLS'] = '1'
+
 import importlib.util
 import json
 import pathlib
@@ -39,7 +43,8 @@ class BridgeIntegration(unittest.TestCase):
         self.reply_mode = "normal"
         server_requests.bind_sinks(self.dispatch, lambda *args: None, lambda sid: True)
         plugin.register(types.SimpleNamespace(register_terminal_environment_provider=terminal_env_registry.register_provider,
-                                             register_middleware=lambda *args: None, register_tool=lambda **kwargs: None))
+                                             register_middleware=lambda *args: None, register_tool=lambda *args, **kwargs: None,
+                                             register_command=lambda *args, **kwargs: None))
         self.env = _create_environment("hermes-desktop-terminal", None, "/workspace", 10)
 
     def dispatch(self, frame):
@@ -116,3 +121,4 @@ class BridgeIntegration(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+

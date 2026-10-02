@@ -164,3 +164,11 @@ def register(ctx):
     spec.loader.exec_module(routing)
     from types import SimpleNamespace
     routing.install(ctx, SimpleNamespace(_session_key=_session_key, _owner=_owner))
+    pc_spec = importlib.util.spec_from_file_location('hermes_desktop_pc', Path(__file__).with_name('pc.py'))
+    pc = importlib.util.module_from_spec(pc_spec)
+    pc_spec.loader.exec_module(pc)
+    pc.install(ctx, SimpleNamespace(_session_key=_session_key, _owner=_owner))
+    remote_spec = importlib.util.spec_from_file_location('hermes_desktop_remote', Path(__file__).with_name('remote.py'))
+    remote = importlib.util.module_from_spec(remote_spec)
+    remote_spec.loader.exec_module(remote)
+    remote.install(ctx, SimpleNamespace(_session_key=_session_key, _owner=_owner))

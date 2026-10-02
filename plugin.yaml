@@ -1,11 +1,25 @@
 name: hermes-desktop-terminal
-version: 0.2.0
+version: 0.3.0-dev
 description: Route terminal and shell file tools to the session-owning Hermes Desktop
 kind: backend
 provides_tools:
+  - desktop_devices
+  - desktop_remote_terminal
   - desktop_terminal_session
+  - desktop_pc
+  - desktop_list_windows
+  - desktop_browser_prepare
+  - desktop_browser_read
+  - desktop_browser_navigate
+  - desktop_browser_click
+  - desktop_browser_type
+  - desktop_browser_pointer
+  - desktop_browser_dialog
+provides_middleware:
+  - tool_execution
 config_schema:
   default_for_desktop:
     type: bool
     default: false
     description: Automatically route terminal and file tools for Desktop conversations to the session-owning device. Missing Desktop ownership refuses execution. Messaging and CLI sessions keep their existing policy. Reload the plugin and start a new conversation after changing this setting.
+

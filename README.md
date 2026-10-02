@@ -7,6 +7,51 @@ operations to the session-owning Hermes Desktop over the existing server-request
 Stock Hermes Desktop does not provide that capability. Live terminal and file routing have been
 verified with the patched Windows Desktop. Production hardening remains pending.
 
+## Device-control development prototype (0.3.0-dev)
+
+The local development build adds `desktop_pc` through a separate typed
+`desktop.pc` request. Its PC driver runs on the owning Desktop over a private,
+per-conversation MCP subprocess transport. The server stays stock.
+
+Windows inspection and exact-field background text entry passed live Notepad
+tests. Use a fresh editor element token for typing, and verify the value;
+process-wide background delivery alone may have no visible effect.
+
+The browser prototype exposes preparation, exact tab binding,
+page reading, navigation, clicking and typing through dedicated typed
+`desktop_browser_prepare`, `desktop_browser_read`, `desktop_browser_navigate`,
+`desktop_browser_click`, `desktop_browser_type`, `desktop_browser_pointer`, and
+`desktop_browser_dialog` tools. They accept flat parameters directly and Desktop
+supplies the explicit browser lifecycle label internally. Browser setup
+supports temporary private profiles, separate persistent Athena account profiles,
+and exact existing Chrome/Edge window attachment. Account modes require separate
+native approval, once or for the conversation; private grants do not authorize
+them. Existing Firefox attachment is unavailable. Chrome passed live launch/bind/navigate/read/click and idle-survival
+checks. Set browser="edge" or browser="firefox" during preparation to use the
+new adapter, which returns target_id/tab_id directly. Its real Windows browser
+tests and bundled-adapter tests pass; visible testing through Athena is pending.
+macOS signed-install discovery and Linux root-owned-install discovery are implemented
+but have not been tested on those platforms. Linux/Mac packaging and PC control
+validation remain pending. The adapter currently reads main-frame dom_refs_v1 pages
+and supports reference-based input; scoped reads, semantic snapshots and frames
+remain pending.
+
+Native consent discloses forwarding window text and screenshots to the remote
+Hermes server and configured AI/vision providers. Screenshots are cached on the
+server. Inspection-only access expires after five idle minutes. Input/browser
+prompts offer Allow once or Allow for this conversation. Conversation grants
+cover subsequent background actions for that chat; focus-changing actions
+require a separate grant. Grants are scoped to the chat, owning window and
+gateway, and end on revoke, client close or driver failure. `status` reports
+active grants. Driver telemetry is disabled. Session ids
+and screenshot output paths are owned by Desktop. For a conversation-approved
+browser, Desktop renews confirmed live driver lifecycles every minute without
+reading pages or performing browser actions; expired lifecycles require an
+explicit fresh preparation. Driver lifetime, permission grants, and browser
+references remain separate.
+Transport failure or timeout
+never automatically repeats an action. Existing `computer_use` stays unchanged.
+
 ## Architecture
 
 The remote Hermes installation retains canonical conversations, identity, and memory. The provider
@@ -44,6 +89,28 @@ one attached live transport. Command approvals remain enabled. Uncertain executi
 trigger automatic retries or fallback execution on the server.
 
 ## Limitations
+
+### Cross-device terminal prototype
+
+The unpublished prototype adds `desktop_devices` and `desktop_remote_terminal`.
+Register the requesting Desktop with `action=register, role=origin`, then register
+the destination Desktop with `action=register, role=target`. The destination asks
+permission to accept commands signed by the listed origin devices. Both clients
+must remain connected to the same authenticated gateway account and profile.
+
+Use the exact destination ID from `desktop_devices` in `desktop_remote_terminal`.
+The native approval dialog appears on the requesting computer and names the
+destination, directory, timeout and command. Allow once approves that command;
+Allow for this conversation covers terminal/file commands on that enrolled
+destination. Each approved command has a short-lived signed receipt consumed
+once by the destination. Private signing keys remain on their respective devices.
+
+`desktop_devices` with `action=revoke` removes this client's enrollment and native
+conversation grants. Closing or reconnecting a client requires registration again.
+An unknown execution outcome must not be retried. There is no server fallback.
+This first prototype uses one origin or target role per device registration and
+routes terminal/file operations only. Browser and native PC tools remain tied to
+their current conversation's Desktop. Live cross-device acceptance is pending.
 
 - Requires the custom, opt-in Desktop capability; generic server-request support alone is insufficient
   for a production permission model.
