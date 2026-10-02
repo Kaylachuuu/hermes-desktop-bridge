@@ -20,7 +20,7 @@ def _owner(key):
     # Never initialize another gateway or infer ownership from a task/cache id.
     server = sys.modules.get("tui_gateway.server")
     if not key or server is None:
-        raise RuntimeError("hermes-desktop-terminal requires a live Desktop session")
+        raise RuntimeError("hermes-desktop-bridge requires a live Desktop session")
     with server._sessions_lock:
         matches = [(sid, s) for sid, s in server._sessions.items()
                    if s.get("session_key") == key]
@@ -120,7 +120,7 @@ class DesktopEnvironment:
                     result["output"] = result["output"][:50000] + "\n[output truncated]\n" + result["output"][-50000:]
                 return result
             except Exception as exc:
-                return {"output": f"hermes-desktop-terminal: {exc}. No automatic retry or server fallback.", "returncode": -1}
+                return {"output": f"hermes-desktop-bridge: {exc}. No automatic retry or server fallback.", "returncode": -1}
 
     def cleanup(self):
         self._closed = True  # The Desktop and its files belong to the user.
@@ -130,8 +130,8 @@ class DesktopEnvironment:
 
 
 class HermesDesktopTerminalProvider(TerminalEnvironmentProvider):
-    name = "hermes-desktop-terminal"
-    display_name = "Hermes Desktop Terminal"
+    name = "hermes-desktop-bridge"
+    display_name = "Hermes Desktop Bridge"
     is_remote = True
     is_container = True  # Select remote shell file operations, not server-native I/O.
     skip_container_guards = False  # Physical Desktop: retain dangerous-command approvals.
