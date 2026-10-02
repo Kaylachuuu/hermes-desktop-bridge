@@ -1,7 +1,7 @@
 # Hermes Desktop Bridge
 
-The repository was renamed from `hermes-desktop-terminal`. The internal plugin
-ID remains `hermes-desktop-terminal` for compatibility with existing installations.
+The repository was renamed from `hermes-desktop-bridge`. The internal plugin
+ID remains `hermes-desktop-bridge` for compatibility with existing installations.
 The experimental PC/browser/cross-device source is on [desktop-control-prototype](https://github.com/Kaylachuuu/hermes-desktop-bridge/tree/desktop-control-prototype).
 
 An experimental standalone Hermes Terminal Environment Provider that routes terminal and shell file
