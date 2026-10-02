@@ -95,7 +95,7 @@ class OrdinaryToolRouting(BridgeIntegration):
         self.assertTrue(json.loads(control({'action': 'status'}))['enabled'])
         seen = []
         route('terminal', {}, lambda args: seen.append(get_terminal_scope()['TERMINAL_ENV']), task_id=self.task)
-        self.assertEqual(seen, ['hermes-desktop-terminal'])
+        self.assertEqual(seen, ['hermes-desktop-bridge'])
         control({'action': 'disable'})
         seen.clear()
         result = json.loads(route('terminal', {}, lambda args: seen.append(args)))
