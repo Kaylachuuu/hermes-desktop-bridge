@@ -166,12 +166,12 @@ def register(ctx):
     spec.loader.exec_module(routing)
     from types import SimpleNamespace
     provider = SimpleNamespace(_session_key=_session_key, _owner=_owner)
-    _, route = routing.install(ctx, provider)
+    control, route = routing.install(ctx, provider)
     if hasattr(ctx, 'register_command'):
         spec = importlib.util.spec_from_file_location('hermes_desktop_diagnostic', Path(__file__).with_name('diagnostic.py'))
         diagnostic = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(diagnostic)
-        diagnostic.install(ctx, provider, route)
+        diagnostic.install(ctx, provider, route, control)
     pc_spec = importlib.util.spec_from_file_location('hermes_desktop_pc', Path(__file__).with_name('pc.py'))
     pc = importlib.util.module_from_spec(pc_spec)
     pc_spec.loader.exec_module(pc)
