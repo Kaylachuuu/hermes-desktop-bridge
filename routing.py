@@ -10,6 +10,27 @@ def install(ctx, provider):
     lock = threading.RLock()
     default_enabled = getattr(ctx, 'get_config', lambda key, default: default)('default_for_desktop', False) is True
 
+    def desktop_guidance(session):
+        if session.get('platform') != 'desktop':
+            return ''
+        routing_note = ('Desktop routing is enabled by default.' if default_enabled else
+                        'First call desktop_terminal_session with {"action":"enable"}.')
+        return ('Hermes Desktop Bridge: "local files", "this computer", and "my laptop" mean the '
+                'Desktop owning this conversation, not the backend server. ' + routing_note +
+                ' Use the normal terminal, read_file, write_file, patch, and search_files tools; '
+                'the bridge routes them to that Desktop. The plugin name is not a tool or shell command. '
+                'To check routing, call desktop_terminal_session with {"action":"status"}. '
+                'Use desktop_remote_terminal only when the user explicitly requests a DIFFERENT '
+                'registered device. That tool requires target_device and command. To list registered '
+                'devices, call desktop_devices with {"action":"list"}; never invent a device ID. '
+                'If a call was not invoked because arguments were missing, correct the tool selection '
+                'and required arguments. Stop on refused or unknown execution outcomes; never fall back '
+                'to the backend server for a Desktop request.')
+
+    register_prompt = getattr(ctx, 'register_system_prompt_section', None)
+    if register_prompt:
+        register_prompt('hermes-desktop-bridge.routing', desktop_guidance, max_chars=1800)
+
     def automatic_session():
         from gateway.session_context import get_session_env
         return default_enabled and get_session_env('HERMES_SESSION_SOURCE', '') == 'desktop'
@@ -79,7 +100,7 @@ def install(ctx, provider):
     ctx.register_tool(
         name='desktop_terminal_session', toolset='terminal', handler=enable,
         schema={'name': 'desktop_terminal_session',
-                'description': 'Enable, disable, or inspect experimental laptop routing for this live Desktop conversation. Enable requires one attached Desktop owner. Disable blocks terminal and file tools until re-enabled or a new conversation is started; it never switches an existing conversation to server execution. Shared terminal configuration is unchanged.',
+                'description': 'Control routing of the NORMAL terminal and file tools to THIS computer (the Desktop owning this chat). Call with {"action":"status"} to check, {"action":"enable"} to enable, or {"action":"disable"} to block. When default routing is enabled, use normal terminal/read_file/write_file/search_files directly. No device registration or target_device is needed for this computer. Disable never switches execution to the backend server.',
                 'parameters': {'type': 'object', 'properties': {'action': {'type': 'string', 'enum': ['enable', 'disable', 'status']}}, 'required': ['action'], 'additionalProperties': False}},
     )
     return enable, route
