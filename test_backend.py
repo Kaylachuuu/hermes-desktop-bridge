@@ -40,7 +40,7 @@ class BridgeIntegration(unittest.TestCase):
         server_requests.bind_sinks(self.dispatch, lambda *args: None, lambda sid: True)
         plugin.register(types.SimpleNamespace(register_terminal_environment_provider=terminal_env_registry.register_provider,
                                              register_middleware=lambda *args: None, register_tool=lambda **kwargs: None))
-        self.env = _create_environment("hermes-desktop-terminal", None, "/workspace", 10)
+        self.env = _create_environment("hermes-desktop-bridge", None, "/workspace", 10)
 
     def dispatch(self, frame):
         self.frames.append(frame)
