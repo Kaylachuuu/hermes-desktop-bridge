@@ -61,11 +61,11 @@ def install(ctx, provider):
             if actual_owner != sid:
                 raise RuntimeError('Desktop owner changed; re-enable routing for this conversation')
             policy = dict(get_terminal_scope() or {})
-            policy.update(TERMINAL_ENV='hermes-desktop-terminal', TERMINAL_CWD='/workspace')
+            policy.update(TERMINAL_ENV='hermes-desktop-bridge', TERMINAL_CWD='/workspace')
             token = set_terminal_scope(policy)
             from tools.terminal_tool_lifecycle import get_active_env
             existing = get_active_env(kwargs.get('task_id'))
-            if existing is not None and getattr(existing, 'env_type', None) != 'hermes-desktop-terminal':
+            if existing is not None and getattr(existing, 'env_type', None) != 'hermes-desktop-bridge':
                 raise RuntimeError('This conversation already has another terminal environment; use a new conversation')
             return next_call(args)
         except Exception as exc:
