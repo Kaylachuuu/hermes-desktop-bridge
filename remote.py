@@ -129,11 +129,11 @@ def install(ctx, provider):
                          args_hint='list|origin|target|revoke')
 
     ctx.register_tool('desktop_devices', 'hermes-desktop-bridge', {
-        'name': 'desktop_devices', 'description': 'Register this live Desktop as an origin first, then register another Desktop as a target. Target enrollment requires native consent for listed origin keys and ends when its client closes or changes gateway. List gives exact device IDs; revoke removes this client. No remote device is discovered or enabled silently.',
+        'name': 'desktop_devices', 'description': 'Manage enrollment for controlling a DIFFERENT computer. Not needed for files on THIS computer: use normal terminal/file tools through Desktop routing. List enrolled devices with {"action":"list"}. Register requires action="register" and role="origin" or "target"; revoke requires action="revoke". Target enrollment requires native consent and ends when its client closes or changes gateway. Never omit action or invent device IDs.',
         'parameters': {'type': 'object', 'properties': {'action': {'type': 'string', 'enum': ['register', 'list', 'revoke']},
                        'role': {'type': 'string', 'enum': ['origin', 'target']}}, 'required': ['action'], 'additionalProperties': False}}, registry)
     ctx.register_tool('desktop_remote_terminal', 'hermes-desktop-bridge', {
-        'name': 'desktop_remote_terminal', 'description': 'Run one bounded Bash command on an explicitly enrolled destination ID from desktop_devices. Native approval appears on the originating Desktop and names the destination. File operations may use this terminal. Never retry unknown outcomes, select another device, or fall back to the server.',
+        'name': 'desktop_remote_terminal', 'description': 'Run a Bash command on a DIFFERENT explicitly enrolled computer, only when requested by the user. For files on THIS computer, use the normal terminal/file tools; do not call this tool. Required arguments: target_device (exact ID from desktop_devices action="list") and command. Approval appears on the requesting Desktop and names the destination. Never guess a destination, retry unknown outcomes, or fall back to the backend server.',
         'parameters': {'type': 'object', 'properties': {'target_device': {'type': 'string'}, 'command': {'type': 'string', 'minLength': 1, 'maxLength': 64000},
                        'cwd': {'type': 'string'}, 'timeout': {'type': 'integer', 'minimum': 1, 'maximum': 60}},
                        'required': ['target_device', 'command'], 'additionalProperties': False}}, execute)
