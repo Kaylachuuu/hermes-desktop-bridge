@@ -1,9 +1,14 @@
 import types
 import unittest
 from test_routing import routing
+from test_backend import plugin
 
 
 class DesktopGuidance(unittest.TestCase):
+    def test_execution_refusal_keeps_desktop_reason(self):
+        with self.assertRaisesRegex(ValueError, 'execution refusal: unavailable'):
+            plugin._decode({'value': '{"error":"unavailable"}'})
+
     def capture(self, default):
         prompts = []
         ctx = types.SimpleNamespace(register_tool=lambda **kwargs: None,
