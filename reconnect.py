@@ -58,11 +58,16 @@ class Bindings:
     def disabled(self, key):
         return self.state.get(self.context(key)[2], {}).get('disabled', False) is True
 
+    def selected(self, key):
+        record = self.state.get(self.context(key)[2], {})
+        return record.get('enabled', bool(record.get('pin'))) is True
+
     def disable(self, key, disabled):
         _, _, storage = self.context(key)
         with self.lock:
             record = dict(self.state.get(storage, {}))
             record['disabled'] = disabled
+            record['enabled'] = not disabled
             record['revision'] = secrets.token_hex(16)
             self.state.set(storage, record)
             self.cache.pop(storage, None)
@@ -111,7 +116,7 @@ class Bindings:
                 latest = self.state.get(storage, {})
                 if latest.get('disabled') or latest.get('revision') != record.get('revision'):
                     raise RuntimeError('Desktop routing was changed while authorization was pending. No command was sent.')
-                self.state.set(storage, {**latest, 'pin': pin, 'disabled': False})
+                self.state.set(storage, {**latest, 'pin': pin, 'disabled': False, 'enabled': True})
                 self.cache[storage] = (sid, peer, pin)
             return sid
 
