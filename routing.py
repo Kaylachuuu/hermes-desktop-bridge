@@ -36,6 +36,10 @@ def install(ctx, provider):
         from gateway.session_context import get_session_env
         return default_enabled and get_session_env('HERMES_SESSION_SOURCE', '') == 'desktop'
 
+    def saved_selection(key):
+        from gateway.session_context import get_session_env
+        return bool(bindings and get_session_env('HERMES_SESSION_SOURCE', '') == 'desktop' and bindings.selected(key))
+
     def enable(args, **kwargs):
         action = args.get('action')
         if set(args) != {'action'} or action not in {'enable', 'disable', 'status'}:
@@ -53,7 +57,7 @@ def install(ctx, provider):
                     state = owners.get(key)
                     if bindings and bindings.disabled(key):
                         state = False
-                return json.dumps({'enabled': bool(state) or (state is None and automatic_session()), 'blocked': state is False,
+                return json.dumps({'enabled': state is not False and (bool(state) or automatic_session() or saved_selection(key)), 'blocked': state is False,
                                    'default_for_desktop': default_enabled,
                                    'scope': 'this live conversation',
                                    'note': 'Disable blocks routed tools until re-enabled or a new conversation is started.'})
@@ -75,7 +79,11 @@ def install(ctx, provider):
         with lock:
             sid = owners.get(key)
         if sid is None and not automatic_session():
-            return next_call(args)
+            try:
+                if not saved_selection(key):
+                    return next_call(args)
+            except Exception as exc:
+                return json.dumps({'error': 'Desktop routing refused: ' + str(exc), 'server_fallback': False})
         if sid is False:
             return json.dumps({'error': 'Desktop routing disabled for this conversation. Re-enable it or start a new conversation.', 'server_fallback': False})
         from tools.terminal_scope import get_terminal_scope, set_terminal_scope, reset_terminal_scope, enforce_no_refusal
