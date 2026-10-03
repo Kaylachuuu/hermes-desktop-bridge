@@ -79,18 +79,26 @@ def _decode(reply):
 
 
 class DesktopEnvironment:
-    def __init__(self, timeout, key, sid):
+    def __init__(self, timeout, key, sid, resolve_owner=_owner, device_for=lambda key: None):
         self.timeout, self.key, self.sid = timeout, key, sid
+        self._owner, self._device = resolve_owner, device_for
         self.cwd = None  # Never send the Ubuntu server's cwd to the Desktop.
         self._lock = threading.RLock()
         self._closed = False
+        self.device = self._device(key)
 
     def execute(self, command, timeout=None, cwd=None, **kwargs):
         # Return errors, rather than raise after dispatch: core retries exceptions.
         with self._lock:
             try:
-                if self._closed or _session_key() != self.key or _owner(self.key) != self.sid:
+                if self._closed or _session_key() != self.key:
                     raise RuntimeError("Desktop environment is closed or belongs to another session")
+                actual = self._owner(self.key)
+                if self._device(self.key) != self.device:
+                    raise RuntimeError("Desktop device changed; use a fresh terminal environment")
+                if actual != self.sid and self.device is None:
+                    raise RuntimeError("Desktop environment is closed or belongs to another session")
+                self.sid = actual
                 seconds = max(1, min(60, math.ceil(float(self.timeout if timeout is None else timeout))))
                 marker = "__ATHENA_CWD_" + uuid.uuid4().hex + "__"
                 target = cwd or self.cwd
@@ -139,6 +147,9 @@ class HermesDesktopTerminalProvider(TerminalEnvironmentProvider):
     skip_container_guards = False  # Physical Desktop: retain dangerous-command approvals.
     env_description = "the session-owning Hermes Desktop through a Bash runner"
 
+    def __init__(self, bindings=None):
+        self.bindings = bindings
+
     def is_available(self):
         return True  # Static bridge availability; ownership checked per execution.
 
@@ -147,7 +158,9 @@ class HermesDesktopTerminalProvider(TerminalEnvironmentProvider):
 
     def create_environment(self, *, cwd, timeout, task_id="default", **kwargs):
         key = _session_key()
-        env = DesktopEnvironment(timeout, key, _owner(key))
+        resolve = self.bindings.resolve if self.bindings else _owner
+        device = self.bindings.device if self.bindings else lambda key: None
+        env = DesktopEnvironment(timeout, key, resolve(key), resolve, device)
         result = env.execute(":", timeout=5)
         if result["returncode"] != 0 or not env.cwd:
             raise RuntimeError("Desktop Bash probe failed: " + result["output"])
@@ -158,7 +171,6 @@ class HermesDesktopTerminalProvider(TerminalEnvironmentProvider):
 
 def register(ctx):
     _declare_contract()
-    ctx.register_terminal_environment_provider(HermesDesktopTerminalProvider())
     import importlib.util
     from pathlib import Path
     spec = importlib.util.spec_from_file_location('hermes_desktop_terminal_routing', Path(__file__).with_name('routing.py'))
@@ -166,6 +178,14 @@ def register(ctx):
     spec.loader.exec_module(routing)
     from types import SimpleNamespace
     provider = SimpleNamespace(_session_key=_session_key, _owner=_owner)
+    bindings = None
+    if getattr(ctx, 'state', None) is not None:
+        spec = importlib.util.spec_from_file_location('hermes_desktop_reconnect', Path(__file__).with_name('reconnect.py'))
+        reconnect = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(reconnect)
+        bindings = reconnect.Bindings(ctx.state, _owner)
+        provider.bindings = bindings
+    ctx.register_terminal_environment_provider(HermesDesktopTerminalProvider(bindings))
     control, route = routing.install(ctx, provider)
     if hasattr(ctx, 'register_command'):
         spec = importlib.util.spec_from_file_location('hermes_desktop_diagnostic', Path(__file__).with_name('diagnostic.py'))
