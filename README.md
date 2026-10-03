@@ -152,6 +152,11 @@ signing endpoint or command approval. Changed/ambiguous owners, forged signature
 stale challenges, profile boundaries, and changes while authorization is pending fail
 closed. Cryptography support is supplied by the Hermes runtime.
 
+Scopuli live acceptance passed before and after a full client restart in the same
+chat without re-enabling routing: both model-free checks verified 300 lines/11,400
+bytes and the expected SHA256. Moving a chat to a different physical device still
+needs live acceptance after installing updated clients on those devices.
+
 Run these tests using the canonical Hermes launcher, from an installed development copy:
 
 ```bash
