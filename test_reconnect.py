@@ -163,6 +163,11 @@ class SignedReconnect(BridgeIntegration):
         control({'action': 'disable'})
         control, route = routing.install(ctx, provider)
         self.assertFalse(json.loads(control({'action': 'status'}))['enabled'])
+        seen.clear()
+        refusal = json.loads(route('terminal', {}, lambda args: seen.append(True)))
+        self.assertIn('error', refusal)
+        self.assertFalse(refusal['server_fallback'])
+        self.assertFalse(seen)
 
     def test_forged_proof_and_ownership_race_refuse_execution(self):
         self.restart()
