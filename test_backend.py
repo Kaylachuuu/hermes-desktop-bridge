@@ -13,6 +13,12 @@ import threading
 import types
 import unittest
 
+# Load the launcher's dependency runtime first, then isolate plugin discovery and
+# saved state. Tests must never register or write through the user's live plugin.
+from hermes_constants import set_hermes_home_override
+_suite_profile = tempfile.TemporaryDirectory(prefix='desktop-bridge-suite-')
+_suite_profile_token = set_hermes_home_override(_suite_profile.name)
+
 from gateway.session_context import set_session_vars, clear_session_vars
 from tui_gateway import server_requests
 from tui_gateway.ws import WSTransport
