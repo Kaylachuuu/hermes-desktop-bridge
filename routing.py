@@ -8,6 +8,7 @@ ROUTED_TOOLS = frozenset({'terminal', 'read_file', 'write_file', 'patch', 'searc
 def install(ctx, provider):
     owners = {}
     lock = threading.RLock()
+    bindings = getattr(provider, 'bindings', None)
     default_enabled = getattr(ctx, 'get_config', lambda key, default: default)('default_for_desktop', False) is True
 
     def desktop_guidance(session):
@@ -47,12 +48,19 @@ def install(ctx, provider):
                 with lock:
                     if action == 'disable':
                         owners[key] = False
+                        if bindings:
+                            bindings.disable(key, True)
                     state = owners.get(key)
+                    if bindings and bindings.disabled(key):
+                        state = False
                 return json.dumps({'enabled': bool(state) or (state is None and automatic_session()), 'blocked': state is False,
                                    'default_for_desktop': default_enabled,
                                    'scope': 'this live conversation',
                                    'note': 'Disable blocks routed tools until re-enabled or a new conversation is started.'})
             sid = provider._owner(key)
+            if bindings:
+                bindings.disable(key, False)
+                sid = bindings.resolve(key)
             with lock:
                 owners[key] = sid
             return json.dumps({'enabled': True, 'scope': 'this live Desktop conversation only',
@@ -74,13 +82,15 @@ def install(ctx, provider):
         token = None
         try:
             enforce_no_refusal()
-            actual_owner = provider._owner(key)
+            actual_owner = bindings.resolve(key) if bindings else provider._owner(key)
             if sid is None:
                 with lock:
                     owners[key] = actual_owner
                 sid = actual_owner
-            if actual_owner != sid:
+            if actual_owner != sid and not bindings:
                 raise RuntimeError('Desktop owner changed; re-enable routing for this conversation')
+            with lock:
+                owners[key] = actual_owner
             policy = dict(get_terminal_scope() or {})
             policy.update(TERMINAL_ENV='hermes-desktop-bridge', TERMINAL_CWD='/workspace')
             token = set_terminal_scope(policy)
@@ -88,6 +98,16 @@ def install(ctx, provider):
             existing = get_active_env(kwargs.get('task_id'))
             if existing is not None and getattr(existing, 'env_type', None) != 'hermes-desktop-bridge':
                 raise RuntimeError('This conversation already has another terminal environment; use a new conversation')
+            if existing is not None and bindings and (getattr(existing, 'device', None) != bindings.device(key) or
+                    (bindings.device(key) is None and getattr(existing, 'sid', None) != actual_owner)):
+                from tools.terminal_tool_lifecycle import cleanup_vm
+                from tools.terminal_tool import _resolve_container_task_id, clear_session_cwd
+                task = kwargs.get('task_id') or 'default'
+                cleanup_vm(_resolve_container_task_id(task))
+                from tools.file_tools import clear_file_ops_cache
+                clear_file_ops_cache(task)
+                clear_session_cwd(task)
+                clear_session_cwd(key)
             return next_call(args)
         except Exception as exc:
             # Middleware exceptions before next_call fail open in core. Return a refusal instead.
