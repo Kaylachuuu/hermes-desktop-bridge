@@ -147,6 +147,23 @@ class SignedReconnect(BridgeIntegration):
         self.assertEqual(restored.execute('touch disabled')['returncode'], -1)
         self.assertFalse(pathlib.Path(self.temp.name, 'disabled').exists())
 
+    def test_explicit_selection_survives_reload_with_default_disabled(self):
+        spec = importlib.util.spec_from_file_location('signed_routing', pathlib.Path(__file__).with_name('routing.py'))
+        routing = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(routing)
+        provider = types.SimpleNamespace(_session_key=plugin._session_key, _owner=plugin._owner,
+                                         bindings=self.current_provider.bindings)
+        ctx = types.SimpleNamespace(register_middleware=lambda *a: None, register_tool=lambda **kw: None,
+                                    get_config=lambda key, default: False)
+        control, route = routing.install(ctx, provider)
+        self.assertTrue(json.loads(control({'action': 'status'}))['enabled'])
+        seen = []
+        route('terminal', {}, lambda args: seen.append(True))
+        self.assertEqual(seen, [True])
+        control({'action': 'disable'})
+        control, route = routing.install(ctx, provider)
+        self.assertFalse(json.loads(control({'action': 'status'}))['enabled'])
+
     def test_forged_proof_and_ownership_race_refuse_execution(self):
         self.restart()
         self.tamper = True
