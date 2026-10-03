@@ -1,10 +1,5 @@
 # Hermes Desktop Bridge
 
-The repository and internal plugin ID are now `hermes-desktop-bridge`.
-Existing installations using `hermes-desktop-terminal` must migrate their plugin
-folder and `plugins.enabled` / `plugins.entries` settings together.
-The experimental PC/browser/cross-device source is on [desktop-control-prototype](https://github.com/Kaylachuuu/hermes-desktop-bridge/tree/desktop-control-prototype).
-
 An experimental standalone Hermes Terminal Environment Provider that routes terminal and shell file
 operations to the session-owning Hermes Desktop over the existing server-request bridge.
 
@@ -97,7 +92,7 @@ trigger automatic retries or fallback execution on the server.
 
 ### Cross-device terminal prototype
 
-This development branch adds `desktop_devices` and `desktop_remote_terminal`.
+The unpublished prototype adds `desktop_devices` and `desktop_remote_terminal`.
 Register the requesting Desktop with `action=register, role=origin`, then register
 the destination Desktop with `action=register, role=target`. The destination asks
 permission to accept commands signed by the listed origin devices. Both clients
@@ -115,8 +110,7 @@ conversation grants. Closing or reconnecting a client requires registration agai
 An unknown execution outcome must not be retried. There is no server fallback.
 This first prototype uses one origin or target role per device registration and
 routes terminal/file operations only. Browser and native PC tools remain tied to
-their current conversation's Desktop. Live Windows-to-Linux terminal/file execution, origin-side approval, conversation
-grants, refused commands and revocation passed acceptance checks.
+their current conversation's Desktop. Live cross-device acceptance is pending.
 
 - Requires the custom, opt-in Desktop capability; generic server-request support alone is insufficient
   for a production permission model.
@@ -130,6 +124,33 @@ grants, refused commands and revocation passed acceptance checks.
   mechanism is provided by the opt-in execution middleware below.
 
 ## Development validation
+
+### Reconnects and moving a conversation
+
+Updated prototype clients prove their persistent Desktop identity using their existing
+Ed25519 installation key and a fresh, conversation-scoped challenge. The backend saves
+the verified device pin in profile-scoped plugin state. Restarting that same client or
+the backend restores terminal/file routing on the next normal tool request, without a
+model-issued enable call. Reinstalling with a different user-data directory creates a
+different device identity.
+
+Continuing a pinned chat on a different device automatically opens a native approval
+prompt on the new device. Approval changes future local terminal/file routing; denial
+or timeout blocks it and prevents repeated prompts on that connection. The model is
+instructed to stop and wait. Explicitly enabling routing requests authorization again.
+Device handoffs discard the previous terminal/file cache and working directory.
+No failed or interrupted command is automatically replayed, and there is no server
+fallback. An explicit disable is saved and survives reconnects and backend restarts.
+
+Older prototype clients retain manual reconnect behavior for unpinned conversations.
+A pinned conversation requires an updated client; it cannot downgrade to unsigned
+identity or bypass device approval by calling enable. Native PC/browser grants and
+cross-device receiving enrollment remain separate from this terminal/file routing pin.
+
+The signing request is a fixed, domain-separated identity proof, never an arbitrary
+signing endpoint or command approval. Changed/ambiguous owners, forged signatures,
+stale challenges, profile boundaries, and changes while authorization is pending fail
+closed. Cryptography support is supplied by the Hermes runtime.
 
 Run these tests using the canonical Hermes launcher, from an installed development copy:
 
@@ -145,15 +166,3 @@ live Windows acceptance or production readiness.
 The Desktop capability should be contributed upstream separately. Production adoption needs
 explicit capability negotiation, native consent and connection authorization, owner targeting,
 deduplication, bounded stdin/output, and cancellation of the full process tree.
-
-## October 2 morning checkpoint
-
-New Desktop chats receive plugin-owned guidance distinguishing ordinary terminal/file
-access on the conversation-owning device from cross-device tools. The former needs
-no destination ID; the latter requires target_device and command. List enrolled IDs
-with desktop_devices and {"action":"list"}. Existing chats retain their saved
-system prompts. All 51 regression checks passed against the stock backend.
-
-Scopuli live checks confirmed hostname/OS/cwd, reading local project source and
-creating directories. Quote paths containing spaces; the reported mkdir failure was
-resolved by shell quoting without a bridge code change.
