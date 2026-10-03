@@ -60,7 +60,7 @@ class Bindings:
 
     def selected(self, key):
         record = self.state.get(self.context(key)[2], {})
-        return record.get('enabled', bool(record.get('pin'))) is True
+        return record.get('disabled') is True or record.get('enabled', bool(record.get('pin'))) is True
 
     def disable(self, key, disabled):
         _, _, storage = self.context(key)
